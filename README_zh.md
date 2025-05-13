@@ -8,6 +8,10 @@
 
 # 使用说明
 
+```go
+go get github.com/Green-rainBit/easytls-sdk-go@last
+```
+
 ## 直接从Let's Encrypt获取证书
 
 邮箱与密钥，填写到easytls.TlsClientConfig内，再填写证书对应的域名的配置信息。
@@ -15,9 +19,6 @@
 需要预获取Let's Encrypt邮箱与密钥
 
 ```go
-go get github.com/Green-rainBit/easytls-sdk-go@last
-
-
 package main
 
 import (

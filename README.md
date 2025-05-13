@@ -8,12 +8,13 @@
 
 # User Instructions
 
+```go
+go get github.com/Green-rainBit/easytls-sdk-go@last
+```
+
 Obtain Certificate Directly from Let's EncryptFill in the email and key in the easytls.TlsClientConfig, then fill in the configuration information corresponding to the certificate's domain name.You need to pre-obtain the email and key from Let's Encrypt.
 
 ```go
-go get github.com/Green-rainBit/easytls-sdk-go@last
-
-
 package main
 
 import (
