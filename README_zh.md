@@ -10,7 +10,7 @@
 
 ## 直接从Let's Encrypt获取证书
 
-邮箱与密钥，填写到tls-api.yaml文件内，再填写证书对应的域名的配置信息。
+邮箱与密钥，填写到easytls.TlsClientConfig内，再填写证书对应的域名的配置信息。
 
 需要预获取Let's Encrypt邮箱与密钥
 
