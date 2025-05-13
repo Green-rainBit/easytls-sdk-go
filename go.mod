@@ -1,8 +1,6 @@
-module easytls-sdk-go
+module github.com/Green-rainBit/easytls-sdk-go
 
-go 1.23.0
-
-toolchain go1.24.2
+go 1.23.4
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0

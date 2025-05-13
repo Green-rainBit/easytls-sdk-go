@@ -2,14 +2,14 @@ package easytls
 
 import (
 	"crypto/tls"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
-	"easytls-sdk-go/esaylego"
-
+	"github.com/Green-rainBit/easytls-sdk-go/esaylego"
 	"github.com/go-acme/lego/v4/lego"
 )
 
@@ -17,29 +17,23 @@ const DNS_CHALLENGE = "DNS_CHALLENGE"
 
 type TlsClientConfig struct {
 	/*
-		必填
-
-		Required
+		NewLegoClientByDNS
+		production or develop (default is develop)
+	*/
+	Env string
+	/*
+		NewLegoClientByDNS or NewLegoServerClientByServer Required
 	*/
 	Domains []string
-	/*
-		NewLegoClientByDNS 时使用
-		LegoConfig.CADirURL 默认为 "lego.LEDirectoryProduction" 调试时请建议切换 "lego.LEDirectoryStaging"
 
+	LegoConfigUser *esaylego.EsaylegoUser
+	/*
 		NewLegoClientByDNS
-		LegoConfig.CADirURL defaults to "lego. LEDirectoryProduction" Please suggest switching to "lego. LEDirectoryStaging"
+		LegoConfig.CADirURL defaults to "lego.LEDirectoryProduction" Please suggest switching to "lego. LEDirectoryStaging"
 	*/
 	LegoConfig *lego.Config
 	/*
-		NewLegoClientByDNS 时使用
-		dns 运营商 alydns 配置 案例：
-			DNS_CHALLENGE: alidns
-			ALICLOUD_ACCESS_KEY:
-			ALICLOUD_SECRET_KEY:
-			ALICLOUD_REGION_ID:
-
-			更多配置请参考 https://go-acme.github.io/lego/dns/active24/
-
+		NewLegoClientByDNS
 		NewLegoClientByDNS
 			DNS Carrier alydns Configuration Examples:
 			DNS_CHALLENGE: alidns
@@ -52,27 +46,27 @@ type TlsClientConfig struct {
 	DnsConfig map[string]string
 
 	/*
-		NewFileClientByFile 时使用
+		NewFileClientByFile
 	*/
 	CertFile string
 	/*
-		NewFileClientByFile 时使用
+		NewFileClientByFile
 	*/
 	KeyFile string
 
 	/*
-		NewLegoServerClientByFile 时使用
-			TimeDiff    time.Duration  启用gozero 签名时使用
-			Fingerprint string         启用gozero 签名时使用
-			Key         []byte         启用gozero 签名时使用
-			PubKey      []byte         启用gozero 签名时使用
+		NewLegoServerClientByServer
+			TimeDiff    time.Duration  user gozero Signature
+			Fingerprint string         user gozero Signature
+			Key         []byte         user gozero Signature
+			PubKey      []byte         user gozero Signature
 	*/
 	Host        string
 	Scheme      string
-	TimeDiff    time.Duration // 启用gozero 签名时使用
-	Fingerprint string        // 启用gozero 签名时使用
-	Key         []byte        // 启用gozero 签名时使用
-	PubKey      []byte        // 启用gozero 签名时使用
+	TimeDiff    time.Duration
+	Fingerprint string
+	Key         []byte
+	PubKey      []byte
 }
 
 type Client interface {
@@ -87,13 +81,44 @@ func getTheUpdateTime(cert tls.Certificate) time.Time {
 	return cert.Leaf.NotAfter.Add(-7 * 24 * time.Hour)
 }
 
+func NewLegoClient(config TlsClientConfig) (Client, error) {
+	if config.KeyFile != "" && config.CertFile != "" {
+		return NewFileClientByFile(config)
+	} else if config.LegoConfig != nil || config.LegoConfigUser != nil {
+		return NewLegoClientByDNS(config)
+	} else if config.Host != "" && config.Scheme != "" {
+		return NewLegoServerClientByServer(config)
+	}
+	return nil, errors.New("config error")
+}
+
 func NewLegoClientByDNS(config TlsClientConfig) (*legoClient, error) {
+	if config.LegoConfigUser == nil {
+		config.LegoConfigUser = &esaylego.EsaylegoUser{
+			Email: config.LegoConfig.User.GetEmail(),
+			Key:   config.LegoConfig.User.GetPrivateKey(),
+		}
+	}
+	if config.LegoConfig == nil {
+		config.LegoConfig = lego.NewConfig(config.LegoConfigUser)
+	}
+	if config.Env != "production" {
+		config.LegoConfig.CADirURL = lego.LEDirectoryStaging
+	}
 	esaylegoClient, err := esaylego.NewEsayClient(config.LegoConfig)
+	if err != nil {
+		return nil, err
+	}
+	req, err := esaylegoClient.Registration.ResolveAccountByKey()
+	if err != nil {
+		return nil, err
+	}
+	config.LegoConfigUser.Registration = req
 	return &legoClient{
 		client:    esaylegoClient,
 		domains:   config.Domains,
 		dnsConfig: config.DnsConfig,
-	}, err
+	}, nil
 }
 
 func NewFileClientByFile(config TlsClientConfig) (*fileClient, error) {
@@ -103,7 +128,7 @@ func NewFileClientByFile(config TlsClientConfig) (*fileClient, error) {
 	}, nil
 }
 
-func NewLegoServerClientByFile(config TlsClientConfig) (*legoServerClient, error) {
+func NewLegoServerClientByServer(config TlsClientConfig) (*legoServerClient, error) {
 	values := url.Values{}
 	for _, domain := range config.Domains {
 		values.Add("domains", domain)

@@ -1,7 +1,11 @@
 package esaylego
 
 import (
+	"crypto"
+	"crypto/x509"
+	"encoding/base64"
 	"errors"
+	"log"
 	"net/url"
 
 	"github.com/go-acme/lego/v4/acme/api"
@@ -9,6 +13,38 @@ import (
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/registration"
 )
+
+type EsaylegoUser struct {
+	Email        string
+	Key          crypto.PrivateKey
+	Registration *registration.Resource
+}
+
+func (u *EsaylegoUser) GetEmail() string {
+	return u.Email
+}
+func (u *EsaylegoUser) GetRegistration() *registration.Resource {
+	return u.Registration
+}
+func (u *EsaylegoUser) GetPrivateKey() crypto.PrivateKey {
+	return u.Key
+}
+
+func NewLegoConfigUser(email, privateKeyStrey string) *EsaylegoUser {
+	bytes, err := base64.StdEncoding.DecodeString(privateKeyStrey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	privateKey, err := x509.ParseECPrivateKey(bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &EsaylegoUser{
+		Email:        email,
+		Key:          privateKey,
+		Registration: &registration.Resource{},
+	}
+}
 
 // Client is the user-friendly way to ACME
 type EsayClient struct {

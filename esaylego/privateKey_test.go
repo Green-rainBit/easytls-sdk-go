@@ -1,4 +1,4 @@
-package esaylego
+package esaylego_test
 
 import (
 	"crypto"

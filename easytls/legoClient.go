@@ -2,9 +2,11 @@ package easytls
 
 import (
 	"crypto/tls"
-	"easytls-sdk-go/esaylego"
-	"easytls-sdk-go/esaylego/dns"
+
 	"fmt"
+
+	"github.com/Green-rainBit/easytls-sdk-go/esaylego"
+	"github.com/Green-rainBit/easytls-sdk-go/esaylego/dns"
 
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/resolver"
