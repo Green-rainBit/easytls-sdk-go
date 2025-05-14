@@ -9,7 +9,7 @@
 # 使用说明
 
 ```go
-go get github.com/Green-rainBit/easytls-sdk-go@last
+go get github.com/Green-rainBit/easytls-sdk-go@latest
 ```
 
 ## 直接从Let's Encrypt获取证书
